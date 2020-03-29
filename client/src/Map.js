@@ -5,44 +5,45 @@ import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 import DeckGL from '@deck.gl/react';
 import { PolygonLayer } from '@deck.gl/layers';
 import { TripsLayer } from '@deck.gl/geo-layers';
+import { LineLayer } from '@deck.gl/layers';
+import GL from '@luma.gl/constants';
 
 // Source data CSV
 const DATA_URL = {
   BUILDINGS:
     'https://raw.githubusercontent.com/uber-common/deck.gl-data/master/examples/trips/buildings.json', // eslint-disable-line
-  TRIPS: require('./traindata.json'), // eslint-disable-line
+  TRIPS: require('./trips-v7.json'), // eslint-disable-line
 };
-
 
 const ambientLight = new AmbientLight({
   color: [255, 255, 255],
-  intensity: 0.0,
+  intensity: 1.0,
 });
 
 const pointLight = new PointLight({
   color: [255, 255, 255],
-  intensity: 20,
+  intensity: 7,
   position: [-74.05, 40.7, 8000],
 });
 
 const lightingEffect = new LightingEffect({ ambientLight, pointLight });
 
 const material = {
-  ambient: 1.0,
+  ambient: 1,
   diffuse: 0.6,
-  shininess: 32,
-  specularColor: [60, 64, 70],
+  shininess: 10,
+  specularColor: [55, 64, 70],
 };
 
 const mapBorders = {
   width: '100vw',
-  height: '100vh'
-}
+  height: '100vh',
+};
 
 const DEFAULT_THEME = {
-  buildingColor: [74, 80, 87],
-  trailColor0: [253, 128, 93],
-  trailColor1: [23, 184, 190],
+  buildingColor: [35, 35, 35],
+  trailColor0: [0, 200, 235],
+  trailColor1: [255, 116, 0],
   material,
   effects: [lightingEffect],
 };
@@ -63,6 +64,24 @@ const landCover = [
     [-74.0, 40.72],
   ],
 ];
+
+// // LINE LAYER ADD-ON
+// function getColor(d) {
+//   const z = d.start[2];
+//   const r = z / 10000;
+
+//   return [255 * (1 - r * 2), 128 * r, 255 * r, 255 * (1 - r)];
+// }
+
+// function getSize(type) {
+//   if (type.search('major') >= 0) {
+//     return 100;
+//   }
+//   if (type.search('small') >= 0) {
+//     return 30;
+//   }
+//   return 60;
+// }
 
 export default class App extends Component {
   constructor(props) {
@@ -104,9 +123,20 @@ export default class App extends Component {
       trips = DATA_URL.TRIPS,
       trailLength = 250,
       theme = DEFAULT_THEME,
+      getWidth = 3,
     } = this.props;
-    console.log(trips)
+
     return [
+      // new LineLayer({
+      //   id: 'trips',
+      //   data: trips,
+      //   opacity: 0.8,
+      //   getSourcePosition: d => d.start,
+      //   getTargetPosition: d => d.end,
+      //   getColor,
+      //   getWidth,
+      //   pickable: true,
+      // }),
       // This is only needed when using shadow effects
       new PolygonLayer({
         id: 'ground',
@@ -121,20 +151,20 @@ export default class App extends Component {
         getPath: d => d.path,
         getTimestamps: d => d.timestamps,
         getColor: d => (d.vendor === 0 ? theme.trailColor0 : theme.trailColor1),
-        opacity: 1,
-        widthMinPixels: 25,
-        rounded: true,
+        opacity: 0.7,
+        widthMinPixels: 10,
+        rounded: false,
         trailLength,
         currentTime: this.state.time,
 
-        shadowEnabled: true,
+        shadowEnabled: false,
       }),
       new PolygonLayer({
         id: 'buildings',
         data: buildings,
         extruded: true,
         wireframe: false,
-        opacity: 0.5,
+        opacity: 0.7,
         getPolygon: f => f.polygon,
         getElevation: f => f.height,
         getFillColor: theme.buildingColor,
@@ -146,7 +176,7 @@ export default class App extends Component {
   render() {
     const {
       viewState,
-      mapStyle = 'mapbox://styles/mapbox/dark-v9',
+      mapStyle = 'mapbox://styles/bjlmckelway/ck8df7aqb0q661is3wxma06lt',
       theme = DEFAULT_THEME,
     } = this.props;
 
@@ -158,6 +188,11 @@ export default class App extends Component {
         viewState={viewState}
         controller={true}
         style={mapBorders}
+        parameters={{
+          clearColor: [0.1, 0.2, 0.2, 0.2],
+          blendFunc: [GL.SRC_ALPHA, GL.ONE, GL.ONE_MINUS_DST_ALPHA, GL.ONE],
+          blendEquation: GL.FUNC_MULTIPLY,
+        }}
       >
         <StaticMap
           reuseMaps
